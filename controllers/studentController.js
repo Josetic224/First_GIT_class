@@ -35,7 +35,7 @@ exports.getStudents = async (req, res) =>{
     res.status(200).json({
         status:"success",
         message:"students has been found",
-        data:students,
+        data:students
 })
 }
 
@@ -52,50 +52,72 @@ exports.getStudent = async (req, res) =>{
     }
     res.status(200).json({
         status:"success",
-        message: `student with studentId ${studentId} gotten successfully.`
+        message: `student with studentId ${studentId} gotten successfully.`,
+        data:student
     })
 }
 
-//update a student
-
-exports.updateStudent = async (req, res) =>{
+// Update a student
+exports.updateStudent = async (req, res) => {
     try {
-        
-    
-    const studentId = req.params.studentId
-    const student = await studentModel.findById(studentId)
-    
-    const studentData ={
+      // track the user id
+      const studentId = req.params.studentId;
+      // track student with the id gotten
+      const student = await studentModel.findById(studentId);
+      // check for error
+      if (!student) {
+        res.status(404).json({
+          message: `Student with id: ${studentId} is not found.`,
+        });
+        return; // Missing return statement added
+      }
+  
+      // check for entity and replace with existing data
+      const scores = req.body.score;
+  
+      const prevScores = {
+        html: student.score.html,
+        javascript: student.score.javascript,
+        css: student.score.css,
+        node: student.score.node,
+      };
+  
+      const studentData = {
         name: req.body.name || student.name,
-        stack:req.body.stack || student.stack,
-        score:{
-            html:req.body.html || student.score.html,
-            css:req.body.css || student.score.css,javaScript:req.body.javascript ||student.score.javascript,
-            node:req.body.node || student.score.node,
-           
-
+        stack: req.body.stack || student.stack,
+        score: {
+          html: scores.html || prevScores.html,
+          javascript: scores.javascript || prevScores.javascript,
+          css: scores.css || prevScores.css,
+          node: scores.node || prevScores.node,
         },
-        
+      };
+  
+      // update the student
+      const updateStudent = await studentModel.findByIdAndUpdate(studentId, studentData, {new: true});
+      res.status(200).json({
+        message: `Student with id: ${studentId} has been updated successfully.`,
+        data: updateStudent,
+      });
+    } catch (err) {
+      res.status(500).json({
+        message: err.message,
+      });
     }
-} catch (error) {
-    res.status(500).json({
-         message:error.message
-    })
-       
-    }
-    const updateStudent  = await studentModel.findByIdAndDelete(student, studentData)
+  };
 
-    if(!updateStudent){
-        res.status(400).json({
+  exports.deleteStudent = async (req, res) =>{
+    studentId = req.params.studentId
+    student = await studentModel.findByIdAndDelete(studentId)
+    if(!student){
+        res.status(401).json({
             status:"failed",
-            message:"could not update student"
-        })
-
-        res.status(200).json({
-            status:"success",
-            message:"student updated successfully",
-            data:updateStudent
+            message:`student with id: ${studentId} could not be deleted`
         })
     }
-
-}
+    res.status(200).json({
+        status:"success",
+        message:`student with id: ${studentId} has been deleted!`,
+        data:student
+    })
+  }
